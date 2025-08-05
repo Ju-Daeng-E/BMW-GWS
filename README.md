@@ -1,5 +1,10 @@
 # BMW PiRacer Control System
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![CAN Bus](https://img.shields.io/badge/CAN-Bus-green.svg)](https://en.wikipedia.org/wiki/CAN_bus)
+[![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-4B%2B-red.svg)](https://www.raspberrypi.org/)
+
 A modular BMW-style control system for the PiRacer platform, featuring CAN bus communication, GPIO controls, and an intuitive graphical interface.
 
 ## 🏗️ Modular Architecture
@@ -244,7 +249,33 @@ BMW_GWS/
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+<div align="center">
+
+### MIT License
+
+**Free to use, modify, and distribute** 🎉
+
+</div>
+
+This project is licensed under the **MIT License**, which means:
+
+✅ **Commercial Use** - Use this software for commercial purposes  
+✅ **Modification** - Modify the source code as needed  
+✅ **Distribution** - Distribute original or modified versions  
+✅ **Private Use** - Use for private/personal projects  
+
+❌ **Liability** - Authors are not liable for any damages  
+❌ **Warranty** - No warranty is provided with this software  
+
+For the complete license text, see the [LICENSE](./LICENSE) file.
+
+---
+
+<div align="center">
+
+**Want to contribute?** We welcome pull requests! 🚀
+
+</div>
 
 ## 🙏 Acknowledgments
 
