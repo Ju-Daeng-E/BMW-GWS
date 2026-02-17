@@ -1,285 +1,184 @@
-# BMW PiRacer Control System
+# BMW-GWS: BMW Gear Lever to PiRacer Control System
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.7+](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
-[![CAN Bus](https://img.shields.io/badge/CAN-Bus-green.svg)](https://en.wikipedia.org/wiki/CAN_bus)
-[![Raspberry Pi](https://img.shields.io/badge/Raspberry%20Pi-4B%2B-red.svg)](https://www.raspberrypi.org/)
+<div align="center">
 
-A modular BMW-style control system for the PiRacer platform, featuring CAN bus communication, GPIO controls, and an intuitive graphical interface.
+**Raspberry Pi-based vehicle control system that interfaces a real BMW F-Series gear lever with a PiRacer through CAN bus communication**
 
-## 🏗️ Modular Architecture
+[![Python](https://img.shields.io/badge/Python-3.7+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![CAN Bus](https://img.shields.io/badge/Protocol-CAN%20Bus-00979D)](https://en.wikipedia.org/wiki/CAN_bus)
+[![Raspberry Pi](https://img.shields.io/badge/Platform-Raspberry%20Pi-A22846?logo=raspberrypi&logoColor=white)](https://www.raspberrypi.org/)
+[![PyQt5](https://img.shields.io/badge/GUI-PyQt5-41CD52?logo=qt&logoColor=white)](https://www.riverbankcomputing.com/software/pyqt/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-The system has been completely modularized for better maintainability and development:
+</div>
 
-### Core Modules
+---
 
-- **`constants.py`** - All system constants and configuration
-- **`data_models.py`** - Data classes for BMW and PiRacer states
-- **`logger.py`** - Custom logging system with multiple handlers
-- **`crc_calculator.py`** - BMW-specific CRC calculations with caching
-- **`speed_sensor.py`** - GPIO-based speed sensor with polling mode
-- **`bmw_lever_controller.py`** - BMW gear lever logic and toggle handling
-- **`can_controller.py`** - CAN bus communication and BMW message handling
-- **`gamepad_controller.py`** - PiRacer gamepad input and vehicle control
-- **`gui_widgets.py`** - Custom PyQt5 widgets (speedometer, gear display)
-- **`main_gui.py`** - Main PyQt5 dashboard application
-- **`main.py`** - Application entry point with fallback modes
+## Overview
 
-## 🚀 Features
+BMW-GWS (Gateway System) reads CAN messages from a **BMW F-Series gear lever** (P/R/N/D/M1-M8), processes gear transitions with toggle logic, and translates them into **PiRacer vehicle commands**. A real-time PyQt5 dashboard displays speed, gear status, and system diagnostics.
 
-- **BMW Gear Lever Control**: P/R/N/D/M1-M8 gear switching with toggle logic
-- **Gamepad Control**: Throttle and steering via ShanWan gamepad
-- **GPIO Speed Sensor**: Real-time speed measurement via GPIO16
-- **BMW CAN Integration**: Direct CAN bus communication for gear lever
-- **Modular Design**: Easy to maintain and extend
-- **PyQt5 Dashboard**: Beautiful real-time monitoring interface
-- **Headless Mode**: Fallback operation without GUI
-- **Error Handling**: Robust error handling and recovery
+### Key Features
 
-## 📋 Requirements
+- **BMW CAN Integration** - Decode gear lever CAN messages (0x197) and control LED indicators (0x3FD)
+- **Toggle-based Gear Logic** - Accurate BMW-style gear transition with center-return detection
+- **GPIO Speed Sensor** - Real-time speed measurement via rotary encoder on GPIO16
+- **Gamepad Control** - ShanWan gamepad for throttle/steering with speed gear adjustment
+- **PyQt5 Dashboard** - Full-screen real-time monitoring UI optimized for 1280x400 displays
+- **Headless Mode** - Automatic fallback when no display is connected
 
-### Hardware
-- Raspberry Pi (with GPIO access)
-- BMW F-Series gear lever with CAN interface
-- PiRacer vehicle
-- ShanWan gamepad
-- Speed sensor connected to GPIO16
+## Architecture
 
-### Software Dependencies
-```bash
-pip install python-can
-pip install crccheck
-pip install PyQt5  # Optional for GUI
-pip install RPi.GPIO
+```
++-------------------+       CAN Bus (500kbps)       +-------------------+
+|   BMW F-Series    | -----------------------------> |   Raspberry Pi    |
+|   Gear Lever      |  ID: 0x197 (Lever Position)   |                   |
+|                   | <----------------------------- |   CAN Controller  |
+|   LED Indicator   |  ID: 0x3FD (LED Command)      |                   |
++-------------------+                                +--------+----------+
+                                                              |
+                          +-----------------------------------+-----------------------------------+
+                          |                                   |                                   |
+                +---------v---------+             +-----------v-----------+           +-----------v-----------+
+                | BMW Lever         |             | Speed Sensor          |           | Gamepad Controller    |
+                | Controller        |             | (GPIO16 Polling)      |           | (ShanWan Gamepad)     |
+                |                   |             |                       |           |                       |
+                | Gear Toggle Logic |             | RPM -> km/h           |           | Throttle / Steering   |
+                | P/R/N/D/M1-M8    |             | Pulse Debouncing      |           | Speed Gear (L2/R2)    |
+                +---------+---------+             +-----------+-----------+           +-----------+-----------+
+                          |                                   |                                   |
+                          +-----------------------------------+-----------------------------------+
+                                                              |
+                                                    +---------v---------+
+                                                    |   PyQt5 Dashboard |
+                                                    |   (1280 x 400)   |
+                                                    |                   |
+                                                    | Speedometer | Gear|
+                                                    | Logs | Status     |
+                                                    +-------------------+
+                                                              |
+                                                    +---------v---------+
+                                                    |     PiRacer       |
+                                                    |  Motor + Steering |
+                                                    +-------------------+
 ```
 
-### PiRacer Dependencies (Optional)
-```bash
-# PiRacer libraries (if available)
-pip install piracer
+## Project Structure
+
+```
+BMW-GWS/
+├── main.py                    # Application entry point (GUI / Headless)
+├── constants.py               # System configuration and enums
+├── data_models.py             # BMWState, PiRacerState dataclasses
+├── logger.py                  # Custom logger with multiple handlers
+├── crc_calculator.py          # BMW CRC-8 calculation (0x197, 0x3FD)
+├── bmw_lever_controller.py    # Gear lever decode and toggle logic
+├── can_controller.py          # CAN bus send/receive management
+├── speed_sensor.py            # GPIO polling-based speed measurement
+├── gamepad_controller.py      # ShanWan gamepad input processing
+├── gui_widgets.py             # SpeedometerWidget, GearDisplayWidget
+├── main_gui.py                # PyQt5 main window and signal handling
+├── tests/
+│   └── test_modules.py        # Module import and functionality tests
+├── requirements.txt
+├── LICENSE
+└── .gitignore
 ```
 
-## 🔧 Installation
+## Hardware Requirements
 
-1. **Clone the repository**:
-   ```bash
-   cd BMW_GWS
-   ```
+| Component | Description |
+|-----------|-------------|
+| Raspberry Pi 4B+ | Main controller with GPIO and CAN interface |
+| BMW F-Series Gear Lever | CAN-connected shifter (P/R/N/D/S/M) |
+| CAN Transceiver | MCP2515 or similar SPI-to-CAN module |
+| PiRacer | Waveshare PiRacer AI Kit |
+| ShanWan Gamepad | USB gamepad for throttle/steering |
+| Rotary Encoder | Speed sensor connected to GPIO16 (20 slots) |
+| Display (optional) | 1280x400 or larger for dashboard UI |
 
-2. **Install dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
+## Setup
 
-3. **Setup CAN interface**:
-   ```bash
-   sudo ip link set can0 down
-   sudo ip link set can0 up type can bitrate 500000
-   ```
+### 1. Install Dependencies
 
-4. **Run the application**:
-   ```bash
-   python3 main.py
-   ```
+```bash
+pip install -r requirements.txt
+```
 
-## 🎮 Usage
+### 2. Configure CAN Interface
 
-### GUI Mode (Recommended)
-- Run `python3 main.py` with a display connected
-- Use ESC key or exit button to close
-- Real-time monitoring of all systems
+```bash
+sudo ip link set can0 down
+sudo ip link set can0 up type can bitrate 500000
+```
 
-### Headless Mode
-- Automatically falls back if no display is available
-- Monitors CAN messages in console
-- Press Ctrl+C to exit
+Verify with:
+```bash
+candump can0
+```
 
-### Gamepad Controls
-- **Left Stick**: Steering
-- **Right Stick**: Throttle
-- **L2/R2**: Speed gear adjustment
-- **Gear Lever**: BMW gear switching
+### 3. Run
 
-## 🏗️ Module Details
+```bash
+python3 main.py
+```
 
-### Constants (`constants.py`)
-Centralized configuration for:
-- CAN bus settings
-- GPIO pin assignments
-- Timing parameters
-- UI dimensions
-- Color schemes
+The system automatically detects whether a display is available and switches between GUI and headless mode.
 
-### Data Models (`data_models.py`)
-Clean data structures:
-- `BMWState`: Gear lever and button states
-- `PiRacerState`: Vehicle control states
+## CAN Protocol
 
-### Logger (`logger.py`)
-Custom logging with:
-- Multiple log levels (DEBUG, INFO, WARNING, ERROR)
-- Multiple handlers support
-- Timestamp formatting
-- Emoji indicators
+### Gear Lever Message (0x197)
 
-### Speed Sensor (`speed_sensor.py`)
-GPIO-based speed measurement:
-- Polling mode for reliability
-- Debouncing for accuracy
-- Real-time RPM calculation
-- Speed conversion to km/h
+| Byte | Field | Description |
+|------|-------|-------------|
+| 0 | CRC | CRC-8 checksum (poly: 0x1D, xor: 0x53) |
+| 1 | Counter | Rolling counter (0x01-0x0E) |
+| 2 | Lever Position | 0x0E=Center, 0x1E=Up(R), 0x3E=Down(D), 0x7E=Side(S) |
+| 3 | Buttons | Bit 0: Park, Bit 1: Unlock |
 
-### BMW Lever Controller (`bmw_lever_controller.py`)
-Advanced gear lever logic:
-- Toggle-based gear switching
-- Button state handling
-- Manual gear control
-- State transitions
+### LED Command Message (0x3FD)
 
-### CAN Controller (`can_controller.py`)
-CAN bus management:
-- BMW message handling
-- LED control messages
-- CRC calculation
-- Error handling
+| Byte | Field | Description |
+|------|-------|-------------|
+| 0 | CRC | CRC-8 checksum (poly: 0x1D, xor: 0x70) |
+| 1 | Counter | Rolling counter |
+| 2 | LED Code | 0x20=P, 0x40=R, 0x60=N, 0x80=D, 0x81=S/M |
+| 3-4 | Reserved | 0x00 |
 
-### Gamepad Controller (`gamepad_controller.py`)
-PiRacer control:
-- Gamepad input processing
-- Vehicle control commands
-- Speed gear management
-- Threading for responsiveness
+## Gear State Machine
 
-### GUI Widgets (`gui_widgets.py`)
-Custom PyQt5 components:
-- `SpeedometerWidget`: Real-time speed display
-- `GearDisplayWidget`: Current gear indicator
+```
+          Unlock Button
+    [P] ──────────────> [N]
+     ^                 / | \
+     |        Up ─────   |   ───── Down
+     |              [R]  |  [D]
+     |                   |   |
+  Park Button        Side Toggle
+     |                   |   |
+     +───── any ────── [M1] - [M8]
+                      Up+ / Down-
+```
 
-### Main GUI (`main_gui.py`)
-Complete dashboard application:
-- Modular UI construction
-- Signal/slot connections
-- Real-time updates
-- Error handling
+## Configuration
 
-## 🔧 Configuration
+Key parameters in `constants.py`:
 
-### CAN Bus Settings
-Edit `constants.py`:
 ```python
+# CAN
 BMW_CAN_CHANNEL = 'can0'
 CAN_BITRATE = 500000
-```
 
-### Speed Sensor Settings
-```python
-SPEED_SENSOR_PIN = 16  # GPIO pin
-PULSES_PER_TURN = 40   # Encoder pulses per wheel turn
-WHEEL_DIAMETER_MM = 64 # Wheel diameter in mm
-```
+# Speed Sensor
+SPEED_SENSOR_PIN = 16       # GPIO BCM pin
+PULSES_PER_TURN = 40        # 20 slots x 2 edges
+WHEEL_DIAMETER_MM = 64      # PiRacer wheel diameter
 
-### UI Settings
-```python
+# UI
 WINDOW_WIDTH = 1280
 WINDOW_HEIGHT = 400
 ```
 
-## 🐛 Troubleshooting
+## License
 
-### CAN Bus Issues
-```bash
-# Check CAN interface
-ip link show can0
-
-# Restart CAN interface
-sudo ip link set can0 down
-sudo ip link set can0 up type can bitrate 500000
-
-# Monitor CAN messages
-candump can0
-```
-
-### GPIO Issues
-```bash
-# Check GPIO permissions
-sudo usermod -a -G gpio $USER
-
-# Test GPIO access
-python3 -c "import RPi.GPIO as GPIO; GPIO.setmode(GPIO.BCM)"
-```
-
-### GUI Issues
-```bash
-# Check display
-echo $DISPLAY
-
-# Install PyQt5
-pip install PyQt5
-
-# Run with explicit display
-DISPLAY=:0 python3 main.py
-```
-
-## 📁 File Structure
-
-```
-BMW_GWS/
-├── constants.py              # System constants
-├── data_models.py           # Data structures
-├── logger.py                # Logging system
-├── crc_calculator.py        # CRC calculations
-├── speed_sensor.py          # GPIO speed sensor
-├── bmw_lever_controller.py  # BMW gear lever logic
-├── can_controller.py        # CAN bus control
-├── gamepad_controller.py    # Gamepad control
-├── gui_widgets.py           # Custom GUI widgets
-├── main_gui.py              # Main GUI application
-├── main.py                  # Application entry point
-├── README.md                # This file
-└── requirements.txt         # Dependencies
-```
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
-
-## 📄 License
-
-<div align="center">
-
-### MIT License
-
-**Free to use, modify, and distribute** 🎉
-
-</div>
-
-This project is licensed under the **MIT License**, which means:
-
-✅ **Commercial Use** - Use this software for commercial purposes  
-✅ **Modification** - Modify the source code as needed  
-✅ **Distribution** - Distribute original or modified versions  
-✅ **Private Use** - Use for private/personal projects  
-
-❌ **Liability** - Authors are not liable for any damages  
-❌ **Warranty** - No warranty is provided with this software  
-
-For the complete license text, see the [LICENSE](./LICENSE) file.
-
----
-
-<div align="center">
-
-**Want to contribute?** We welcome pull requests! 🚀
-
-</div>
-
-## 🙏 Acknowledgments
-
-- BMW for the gear lever design
-- PiRacer team for the vehicle platform
-- PyQt5 community for the GUI framework
-- Python-CAN team for CAN bus support 
+This project is licensed under the [MIT License](LICENSE).
